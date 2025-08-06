@@ -11,8 +11,8 @@ docker-run: docker-build
 	@if [ -f .env ]; then \
 		docker run -d --rm --name $(APP_NAME) \
 		--env-file .env \
-		-p 8080:8080 \
-		-p 8443:443 \
+		-p 8082:8080 \
+		-p 9443:443 \
 		-v /etc/letsencrypt/live/your-domain.com/fullchain.pem:/app/certs/fullchain.pem:ro \
 		-v /etc/letsencrypt/live/your-domain.com/privkey.pem:/app/certs/privkey.pem:ro \
 		$(DOCKER_IMAGE_NAME); \
