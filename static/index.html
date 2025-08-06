@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>💰 Expense Tracker</h1>
+        
+        <div class="calendar-section">
+            <div class="calendar-header">
+                <button id="prev-month" class="calendar-btn">‹</button>
+                <h2 id="current-month">January 2024</h2>
+                <button id="next-month" class="calendar-btn">›</button>
+            </div>
+            <div class="calendar-grid" id="calendar-grid">
+                <!-- Calendar will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <form id="expense-form">
+            <div class="form-group">
+                <label for="date">📅 Date</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="category">🏷️ Category</label>
+                <select id="category" name="category" required>
+                    <option value="">Select category...</option>
+                    <option value="food">🍽️ Food & Dining</option>
+                    <option value="transport">🚌 Transport</option>
+                    <option value="shopping">🛍️ Shopping</option>
+                    <option value="entertainment">🎬 Entertainment</option>
+                    <option value="utilities">⚡ Utilities</option>
+                    <option value="rent">🏠 Rent</option>
+                    <option value="health">🏥 Healthcare</option>
+                    <option value="education">📚 Education</option>
+                    <option value="travel">✈️ Travel</option>
+                    <option value="other">📦 Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">📝 Description (optional)</label>
+                <input type="text" id="description" name="description" placeholder="Brief description...">
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">💰 Amount (RUB)</label>
+                <input type="number" id="amount" name="amount" step="0.01" min="0" required placeholder="0.00">
+            </div>
+            
+            <button type="submit" class="submit-btn">➕ Add Expense</button>
+        </form>
+
+        <div class="upload-section">
+            <h3>📁 Upload CSV</h3>
+            <form id="csv-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="csv-file">Choose CSV file</label>
+                    <input type="file" id="csv-file" name="csv" accept=".csv" required>
+                </div>
+                <button type="submit" class="upload-btn">📤 Upload CSV</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
