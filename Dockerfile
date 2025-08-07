@@ -32,7 +32,7 @@ COPY --from=builder /app/static ./static
 # Create data directory
 RUN mkdir -p /app/data
 
-# Expose ports
-EXPOSE 8080 443
+# Expose ports (app defaults to 0.0.0.0:8082)
+EXPOSE 8082 443
 
 CMD ["./main"]

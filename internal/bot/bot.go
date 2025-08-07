@@ -86,7 +86,7 @@ To add expenses, use the mini app by clicking the button below.`
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("📱 Open Mini App", "https://tralalero-tralala.ru/"),
+			tgbotapi.NewInlineKeyboardButtonURL("📱 Open Mini App", "https://tralalero-tralala.ru/expenses/"),
 		),
 	)
 
