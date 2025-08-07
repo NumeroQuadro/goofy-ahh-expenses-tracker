@@ -22,3 +22,4 @@ go.work
 
 # Docker
 docker-compose.yml
+GEMINI.md

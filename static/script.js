@@ -116,7 +116,7 @@ document.getElementById('expense-form').addEventListener('submit', function(e) {
     }
     
     // Send to server
-    fetch('/transaction', {
+    fetch('/expenses/transaction', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ document.getElementById('csv-form').addEventListener('submit', function(e) {
     submitBtn.textContent = '📤 Uploading...';
     submitBtn.disabled = true;
     
-    fetch('/upload-csv', {
+    fetch('/expenses/upload-csv', {
         method: 'POST',
         body: formData
     })

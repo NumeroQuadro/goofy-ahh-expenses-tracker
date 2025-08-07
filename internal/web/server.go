@@ -37,8 +37,8 @@ func New(data *data.Data, bot BotHandler) *Server {
 	// Load HTML templates
 	r.LoadHTMLGlob("static/*.html")
 
-	// Serve static files
-	r.Static("/static", "./static")
+	// Serve static files under the app prefix so it works behind reverse proxy
+	r.Static("/expenses/static", "./static")
 
 	s := &Server{
 		router: r,
