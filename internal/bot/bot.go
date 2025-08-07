@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/NumeroQuadro/goofy-ahh-expenses-tracker/internal/data"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Bot struct {
@@ -86,7 +86,7 @@ To add expenses, use the mini app by clicking the button below.`
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("📱 Open Mini App", "https://your-domain.com"),
+			tgbotapi.NewInlineKeyboardButtonURL("📱 Open Mini App", "https://tralalero-tralala.ru/"),
 		),
 	)
 
@@ -98,11 +98,11 @@ To add expenses, use the mini app by clicking the button below.`
 func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 	today := time.Now().Format("2006-01-02")
 	transactions := b.data.GetTransactionsByDate(today)
-	
+
 	var total float64
 	var report strings.Builder
 	report.WriteString(fmt.Sprintf("📊 Daily Report for %s\n\n", today))
-	
+
 	if len(transactions) == 0 {
 		report.WriteString("No expenses recorded today! 🎉")
 	} else {
@@ -116,13 +116,13 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 			total += tx.Amount
 		}
 		report.WriteString(fmt.Sprintf("\n💰 Total: %.2f RUB", total))
-		
+
 		// Calculate daily budget (example: 1000 RUB per day)
 		dailyBudget := 1000.0
 		remaining := dailyBudget - total
 		report.WriteString(fmt.Sprintf("\n🎯 Daily Budget: %.2f RUB", dailyBudget))
 		report.WriteString(fmt.Sprintf("\n💸 Remaining: %.2f RUB", remaining))
-		
+
 		if remaining < 0 {
 			report.WriteString(" ⚠️ Over budget!")
 		} else if remaining < 100 {
@@ -131,7 +131,7 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 			report.WriteString(" ✅ Good!")
 		}
 	}
-	
+
 	message := tgbotapi.NewMessage(msg.Chat.ID, report.String())
 	b.api.Send(message)
 }
@@ -337,25 +337,25 @@ func (b *Bot) handleFileUpload(msg *tgbotapi.Message) {
 		return
 	}
 
-			// Add all valid transactions
-		for _, tx := range transactions {
-			if err := b.data.AddTransaction(struct {
-				Date        string
-				Category    string
-				Description string
-				Amount      float64
-			}{
-				Date:        tx.Date,
-				Category:    tx.Category,
-				Description: tx.Description,
-				Amount:      tx.Amount,
-			}); err != nil {
-				log.Printf("Failed to save transaction: %v", err)
-				response := tgbotapi.NewMessage(msg.Chat.ID, "❌ Failed to save transactions")
-				b.api.Send(response)
-				return
-			}
+	// Add all valid transactions
+	for _, tx := range transactions {
+		if err := b.data.AddTransaction(struct {
+			Date        string
+			Category    string
+			Description string
+			Amount      float64
+		}{
+			Date:        tx.Date,
+			Category:    tx.Category,
+			Description: tx.Description,
+			Amount:      tx.Amount,
+		}); err != nil {
+			log.Printf("Failed to save transaction: %v", err)
+			response := tgbotapi.NewMessage(msg.Chat.ID, "❌ Failed to save transactions")
+			b.api.Send(response)
+			return
 		}
+	}
 
 	// Send success message
 	successMsg := fmt.Sprintf("✅ Successfully imported %d transactions!\n\n", len(transactions))
