@@ -11,7 +11,7 @@ docker-run: docker-build
 	@if [ -f .env ]; then \
 		docker run -d --rm --name $(APP_NAME) \
 		--env-file .env \
-		-p 8082:8082 \
+		-p 8088:8088 \
 		$(DOCKER_IMAGE_NAME); \
 	else \
 		@echo "Error: .env file not found. Please create one from env.example."; \
