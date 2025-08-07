@@ -106,7 +106,9 @@ document.getElementById('expense-form').addEventListener('submit', function(e) {
         date: formData.get('date'),
         category: formData.get('category'),
         description: formData.get('description'),
-        amount: parseFloat(formData.get('amount'))
+        amount: parseFloat(formData.get('amount')),
+        // optional: include chatId if running inside Telegram WA
+        chat_id: tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : undefined
     };
     
     // Validate data

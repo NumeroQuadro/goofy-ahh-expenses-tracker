@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+    "os"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +18,7 @@ import (
 type Bot struct {
 	api  *tgbotapi.BotAPI
 	data *data.Data
+    location *time.Location
 }
 
 type TransactionData struct {
@@ -34,10 +36,20 @@ type Transaction struct {
 }
 
 func New(api *tgbotapi.BotAPI, data *data.Data) *Bot {
-	return &Bot{
-		api:  api,
-		data: data,
-	}
+    tz := os.Getenv("DAILY_REPORT_TIMEZONE")
+    if tz == "" {
+        tz = "UTC"
+    }
+    loc, err := time.LoadLocation(tz)
+    if err != nil {
+        log.Printf("Invalid DAILY_REPORT_TIMEZONE '%s', falling back to UTC: %v", tz, err)
+        loc = time.UTC
+    }
+    return &Bot{
+        api:  api,
+        data: data,
+        location: loc,
+    }
 }
 
 func (b *Bot) Start() {
@@ -96,7 +108,7 @@ To add expenses, use the mini app by clicking the button below.`
 }
 
 func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
-	today := time.Now().Format("2006-01-02")
+    today := time.Now().In(b.location).Format("2006-01-02")
 	transactions := b.data.GetTransactionsByDate(today)
 
 	var total float64

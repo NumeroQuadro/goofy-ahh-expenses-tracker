@@ -99,8 +99,8 @@ func (s *Server) handleTransaction(c *gin.Context) {
 		return
 	}
 
-	// If chat ID is provided, send confirmation via bot
-	if req.ChatID != 0 {
+    // If chat ID is provided, send confirmation via bot
+    if req.ChatID != 0 {
 		transactionData := map[string]interface{}{
 			"date":        req.Date,
 			"category":    req.Category,
