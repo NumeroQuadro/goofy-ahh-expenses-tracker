@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-    "os"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +16,9 @@ import (
 )
 
 type Bot struct {
-	api  *tgbotapi.BotAPI
-	data *data.Data
-    location *time.Location
+	api      *tgbotapi.BotAPI
+	data     *data.Data
+	location *time.Location
 }
 
 type TransactionData struct {
@@ -36,20 +36,20 @@ type Transaction struct {
 }
 
 func New(api *tgbotapi.BotAPI, data *data.Data) *Bot {
-    tz := os.Getenv("DAILY_REPORT_TIMEZONE")
-    if tz == "" {
-        tz = "UTC"
-    }
-    loc, err := time.LoadLocation(tz)
-    if err != nil {
-        log.Printf("Invalid DAILY_REPORT_TIMEZONE '%s', falling back to UTC: %v", tz, err)
-        loc = time.UTC
-    }
-    return &Bot{
-        api:  api,
-        data: data,
-        location: loc,
-    }
+	tz := os.Getenv("DAILY_REPORT_TIMEZONE")
+	if tz == "" {
+		tz = "UTC"
+	}
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		log.Printf("Invalid DAILY_REPORT_TIMEZONE '%s', falling back to UTC: %v", tz, err)
+		loc = time.UTC
+	}
+	return &Bot{
+		api:      api,
+		data:     data,
+		location: loc,
+	}
 }
 
 func (b *Bot) Start() {
@@ -72,6 +72,8 @@ func (b *Bot) Start() {
 			b.handleDailyReport(update.Message)
 		case "csv":
 			b.handleCSVUpload(update.Message)
+		case "export":
+			b.handleExport(update.Message)
 		case "help":
 			b.handleHelp(update.Message)
 		default:
@@ -108,12 +110,23 @@ To add expenses, use the mini app by clicking the button below.`
 }
 
 func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
-    today := time.Now().In(b.location).Format("2006-01-02")
-	transactions := b.data.GetTransactionsByDate(today)
+	// allow optional date: /report YYYY-MM-DD
+	parts := strings.Fields(msg.Text)
+	var dateStr string
+	if len(parts) > 1 {
+		if _, err := time.Parse("2006-01-02", parts[1]); err == nil {
+			dateStr = parts[1]
+		}
+	}
+	if dateStr == "" {
+		dateStr = time.Now().In(b.location).Format("2006-01-02")
+	}
+
+	transactions := b.data.GetTransactionsByDate(dateStr)
 
 	var total float64
 	var report strings.Builder
-	report.WriteString(fmt.Sprintf("📊 Daily Report for %s\n\n", today))
+	report.WriteString(fmt.Sprintf("📊 Daily Report for %s\n\n", dateStr))
 
 	if len(transactions) == 0 {
 		report.WriteString("No expenses recorded today! 🎉")
@@ -175,6 +188,7 @@ func (b *Bot) handleHelp(msg *tgbotapi.Message) {
 Commands:
 • /start - Welcome message and mini app
 • /report - Get today's spending summary
+• /report YYYY-MM-DD - Get spending summary for a specific date
 • /csv - Upload your expense data
 • /help - This help message
 
@@ -189,6 +203,18 @@ For support, contact the bot administrator.`
 
 	message := tgbotapi.NewMessage(msg.Chat.ID, text)
 	b.api.Send(message)
+}
+func (b *Bot) handleExport(msg *tgbotapi.Message) {
+	// stream current CSV data back to the user
+	all := b.data.GetAllTransactions()
+	var sb strings.Builder
+	sb.WriteString("Date,Category,Description,Amount\n")
+	for _, tx := range all {
+		sb.WriteString(fmt.Sprintf("%s,%s,%s,%.2f\n", tx.Date, tx.Category, strings.ReplaceAll(tx.Description, ",", " "), tx.Amount))
+	}
+	doc := tgbotapi.FileBytes{Name: "expenses.csv", Bytes: []byte(sb.String())}
+	msgDoc := tgbotapi.NewDocument(msg.Chat.ID, doc)
+	b.api.Send(msgDoc)
 }
 
 func (b *Bot) handleUnknownCommand(msg *tgbotapi.Message) {
