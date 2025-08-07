@@ -122,43 +122,89 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 		dateStr = time.Now().In(b.location).Format("2006-01-02")
 	}
 
+	// Parse selected date
+	selectedDate, err := time.ParseInLocation("2006-01-02", dateStr, b.location)
+	if err != nil {
+		selectedDate = time.Now().In(b.location)
+		dateStr = selectedDate.Format("2006-01-02")
+	}
+
+	// Today's transactions and total
 	transactions := b.data.GetTransactionsByDate(dateStr)
+	var todayTotal float64
+	for _, tx := range transactions {
+		todayTotal += tx.Amount
+	}
 
-	var total float64
-	var report strings.Builder
-	report.WriteString(fmt.Sprintf("📊 Daily Report for %s\n\n", dateStr))
-
-	if len(transactions) == 0 {
-		report.WriteString("No expenses recorded today! 🎉")
-	} else {
-		report.WriteString("Today's expenses:\n")
-		for _, tx := range transactions {
-			report.WriteString(fmt.Sprintf("• %s: %.2f RUB", tx.Category, tx.Amount))
-			if tx.Description != "" {
-				report.WriteString(fmt.Sprintf(" (%s)", tx.Description))
-			}
-			report.WriteString("\n")
-			total += tx.Amount
-		}
-		report.WriteString(fmt.Sprintf("\n💰 Total: %.2f RUB", total))
-
-		// Calculate daily budget (example: 1000 RUB per day)
-		dailyBudget := 1000.0
-		remaining := dailyBudget - total
-		report.WriteString(fmt.Sprintf("\n🎯 Daily Budget: %.2f RUB", dailyBudget))
-		report.WriteString(fmt.Sprintf("\n💸 Remaining: %.2f RUB", remaining))
-
-		if remaining < 0 {
-			report.WriteString(" ⚠️ Over budget!")
-		} else if remaining < 100 {
-			report.WriteString(" ⚠️ Low budget!")
-		} else {
-			report.WriteString(" ✅ Good!")
+	// Monthly budget from env (default 12000 RUB)
+	monthlyBudget := 12000.0
+	if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
+		if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
+			monthlyBudget = v
 		}
 	}
 
+	// Compute month boundaries and stats
+	lastOfMonth := time.Date(selectedDate.Year(), selectedDate.Month()+1, 0, 0, 0, 0, 0, b.location)
+	daysInMonth := lastOfMonth.Day()
+	dayOfMonth := selectedDate.Day()
+
+	// Sum spent in month up to and including selected date
+	var monthSpentThroughToday float64
+	for _, tx := range b.data.GetAllTransactions() {
+		// parse tx date
+		d, err := time.ParseInLocation("2006-01-02", tx.Date, b.location)
+		if err != nil {
+			continue
+		}
+		if d.Year() == selectedDate.Year() && d.Month() == selectedDate.Month() && !d.After(selectedDate) {
+			monthSpentThroughToday += tx.Amount
+		}
+	}
+
+	// Even monthly distribution: allowed cumulative spend through today
+	allowedCumulative := monthlyBudget * (float64(dayOfMonth) / float64(daysInMonth))
+	saldoToday := allowedCumulative - monthSpentThroughToday
+
+	// Tomorrow's allowance (dynamic), if there are days left in the month
+	remainingDaysAfterToday := daysInMonth - dayOfMonth
+	var tomorrowAllowance float64
+	if remainingDaysAfterToday > 0 {
+		remainingBudgetAfterToday := monthlyBudget - monthSpentThroughToday
+		if remainingBudgetAfterToday < 0 {
+			remainingBudgetAfterToday = 0
+		}
+		tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
+	}
+
+	var report strings.Builder
+	report.WriteString(fmt.Sprintf("📊 %s\n", dateStr))
+	report.WriteString(fmt.Sprintf("💰 Today: %.2f RUB\n", todayTotal))
+	report.WriteString(fmt.Sprintf("🎯 Saldo today: %.2f RUB\n", saldoToday))
+	if remainingDaysAfterToday > 0 {
+		report.WriteString(fmt.Sprintf("➡️ Tomorrow: %.2f RUB\n", tomorrowAllowance))
+	}
+	if saldoToday < 0 {
+		report.WriteString("⚠️ Over track for the month.")
+	} else {
+		report.WriteString("✅ On track.")
+	}
+
+	// Send text report
 	message := tgbotapi.NewMessage(msg.Chat.ID, report.String())
 	b.api.Send(message)
+
+	// Also send full CSV export with all expenses
+	all := b.data.GetAllTransactions()
+	var sb strings.Builder
+	sb.WriteString("Date,Category,Description,Amount\n")
+	for _, tx := range all {
+		sb.WriteString(fmt.Sprintf("%s,%s,%s,%.2f\n", tx.Date, tx.Category, strings.ReplaceAll(tx.Description, ",", " "), tx.Amount))
+	}
+	doc := tgbotapi.FileBytes{Name: "expenses.csv", Bytes: []byte(sb.String())}
+	msgDoc := tgbotapi.NewDocument(msg.Chat.ID, doc)
+	b.api.Send(msgDoc)
+
 }
 
 func (b *Bot) handleCSVUpload(msg *tgbotapi.Message) {
