@@ -85,22 +85,8 @@ func (s *Server) handleTransaction(c *gin.Context) {
 		return
 	}
 
-	// Create transaction
-	tx := data.Transaction{
-		Date:        req.Date,
-		Category:    req.Category,
-		Description: req.Description,
-		Amount:      req.Amount,
-	}
-
-	// Add to database
-	if err := s.data.AddTransaction(tx); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save transaction"})
-		return
-	}
-
-    // If chat ID is provided, send confirmation via bot
-    if req.ChatID != 0 {
+	// If chat ID is provided, let the bot handle persistence + confirmation to avoid duplicate saves
+	if req.ChatID != 0 {
 		transactionData := map[string]interface{}{
 			"date":        req.Date,
 			"category":    req.Category,
@@ -109,13 +95,30 @@ func (s *Server) handleTransaction(c *gin.Context) {
 		}
 
 		jsonData, _ := json.Marshal(transactionData)
-		s.bot.HandleWebAppData(req.ChatID, string(jsonData))
+		if err := s.bot.HandleWebAppData(req.ChatID, string(jsonData)); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process transaction"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Transaction added via Telegram",
+		})
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":     "Transaction added successfully",
-		"transaction": tx,
-	})
+	// Otherwise, persist directly
+	tx := data.Transaction{
+		Date:        req.Date,
+		Category:    req.Category,
+		Description: req.Description,
+		Amount:      req.Amount,
+	}
+	if err := s.data.AddTransaction(tx); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save transaction"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Transaction added successfully", "transaction": tx})
 }
 
 func (s *Server) handleCSVUpload(c *gin.Context) {

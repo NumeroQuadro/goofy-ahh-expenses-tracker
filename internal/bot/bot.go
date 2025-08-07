@@ -194,7 +194,7 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 	message := tgbotapi.NewMessage(msg.Chat.ID, report.String())
 	b.api.Send(message)
 
-	// Also send full CSV export with all expenses
+	// Also send full CSV export with all expenses across all months
 	all := b.data.GetAllTransactions()
 	var sb strings.Builder
 	sb.WriteString("Date,Category,Description,Amount\n")
