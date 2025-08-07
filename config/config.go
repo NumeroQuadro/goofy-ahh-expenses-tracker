@@ -23,7 +23,7 @@ func Load() *Config {
 
 	return &Config{
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
-		WebAddress:       getEnv("WEB_ADDRESS", "0.0.0.0:8080"),
+		WebAddress:       getEnv("WEB_ADDRESS", "0.0.0.0:8082"),
 		CertPath:         getEnv("CERT_PATH", ""),
 		KeyPath:          getEnv("KEY_PATH", ""),
 		DataPath:         getEnv("DATA_PATH", "/app/data/data.csv"),

@@ -47,10 +47,13 @@ func New(data *data.Data, bot BotHandler) *Server {
 	}
 
 	// Routes
-	r.GET("/", s.handleIndex)
-	r.POST("/transaction", s.handleTransaction)
-	r.POST("/upload-csv", s.handleCSVUpload)
-	r.GET("/transactions", s.handleGetTransactions)
+	expenses := r.Group("/expenses")
+	{
+		expenses.GET("/", s.handleIndex)
+		expenses.POST("/transaction", s.handleTransaction)
+		expenses.POST("/upload-csv", s.handleCSVUpload)
+		expenses.GET("/transactions", s.handleGetTransactions)
+	}
 
 	return s
 }
