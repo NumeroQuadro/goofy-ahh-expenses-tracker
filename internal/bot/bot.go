@@ -192,8 +192,11 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
         tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
     }
 
-	var report strings.Builder
-	report.WriteString(fmt.Sprintf("📊 %s\n", dateStr))
+    var report strings.Builder
+    periodStart := cycleStart.Format("2006-01-02")
+    periodEnd := nextCycleStart.AddDate(0,0,-1).Format("2006-01-02")
+    report.WriteString(fmt.Sprintf("📊 %s\n", dateStr))
+    report.WriteString(fmt.Sprintf("📅 Period: %s — %s\n", periodStart, periodEnd))
 	report.WriteString(fmt.Sprintf("💰 Today: %.2f RUB\n", todayTotal))
 	report.WriteString(fmt.Sprintf("🎯 Saldo today: %.2f RUB\n", saldoToday))
 	if remainingDaysAfterToday > 0 {
@@ -376,8 +379,11 @@ func (b *Bot) handleSaldo(msg *tgbotapi.Message) {
     }
 
 	// Compose concise response
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("📅 %s\n", dateStr))
+    var sb strings.Builder
+    periodStart := cycleStart.Format("2006-01-02")
+    periodEnd := nextCycleStart.AddDate(0,0,-1).Format("2006-01-02")
+    sb.WriteString(fmt.Sprintf("📅 %s\n", dateStr))
+    sb.WriteString(fmt.Sprintf("📅 Period: %s — %s\n", periodStart, periodEnd))
 	sb.WriteString(fmt.Sprintf("💳 Spent today: %.2f RUB\n", todayTotal))
     sb.WriteString(fmt.Sprintf("🎯 Allowed so far (cycle): %.2f RUB\n", allowedCumulative))
 	sb.WriteString(fmt.Sprintf("💸 Saldo today: %.2f RUB\n", saldoToday))
