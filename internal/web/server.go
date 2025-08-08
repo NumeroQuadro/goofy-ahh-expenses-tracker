@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/NumeroQuadro/goofy-ahh-expenses-tracker/internal/data"
 	"github.com/gin-gonic/gin"
@@ -50,12 +51,136 @@ func New(data *data.Data, bot BotHandler) *Server {
 	expenses := r.Group("/expenses")
 	{
 		expenses.GET("/", s.handleIndex)
+		expenses.GET("/graph", s.handleGraph)
+		expenses.GET("/graph-data", s.handleGraphData)
 		expenses.POST("/transaction", s.handleTransaction)
 		expenses.POST("/upload-csv", s.handleCSVUpload)
 		expenses.GET("/transactions", s.handleGetTransactions)
 	}
 
 	return s
+}
+
+// --- Graph pages & data ---
+
+func (s *Server) handleGraph(c *gin.Context) {
+	c.HTML(http.StatusOK, "graph.html", gin.H{
+		"title": "Expense Graph",
+	})
+}
+
+func (s *Server) handleGraphData(c *gin.Context) {
+	type point struct {
+		Date       string  `json:"date"`
+		Spend      float64 `json:"spend"`
+		Cumulative float64 `json:"cumulative"`
+		BudgetCum  float64 `json:"budget_cum"`
+		Saldo      float64 `json:"saldo"`
+	}
+
+	fromStr := c.Query("from")
+	toStr := c.Query("to")
+
+	// Read budget from env; default 12000 (see OVERVIEW.md)
+	budgetMonthly := 12000.0
+	if v := os.Getenv("MONTHLY_BUDGET_RUB"); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil && f > 0 {
+			budgetMonthly = f
+		}
+	}
+
+	// Build daily sum map
+	txs := s.data.GetAllTransactions()
+	daySum := map[string]float64{}
+	const layout = "2006-01-02"
+	minDate, maxDate := "", ""
+
+	for _, tx := range txs {
+		daySum[tx.Date] += tx.Amount
+		if minDate == "" || tx.Date < minDate {
+			minDate = tx.Date
+		}
+		if maxDate == "" || tx.Date > maxDate {
+			maxDate = tx.Date
+		}
+	}
+
+	// Default window: last 90 days (or full range if fewer)
+	var from, to time.Time
+	now := time.Now()
+	defaultFrom := now.AddDate(0, 0, -90)
+
+	if fromStr != "" {
+		if t, err := time.Parse(layout, fromStr); err == nil {
+			from = t
+		}
+	}
+	if toStr != "" {
+		if t, err := time.Parse(layout, toStr); err == nil {
+			to = t
+		}
+	}
+
+	// Fallbacks
+	if from.IsZero() || to.IsZero() {
+		if minDate != "" && maxDate != "" {
+			mi, _ := time.Parse(layout, minDate)
+			ma, _ := time.Parse(layout, maxDate)
+			if from.IsZero() {
+				if ma.Before(defaultFrom) {
+					from = mi
+				} else {
+					from = defaultFrom
+				}
+			}
+			if to.IsZero() {
+				to = ma
+			}
+		} else {
+			// No data: show last 30 days
+			from = now.AddDate(0, 0, -30)
+			to = now
+		}
+	}
+
+	if from.After(to) {
+		from, to = to, from
+	}
+
+	// Walk inclusive date range and compute series
+	var res []point
+	var cum float64
+	for d := from; !d.After(to); d = d.AddDate(0, 0, 1) {
+		key := d.Format(layout)
+		spend := daySum[key]
+
+		// Per-month budget curve: monthly budget * (dayIndex / daysInMonth)
+		firstOfMonth := time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC)
+		daysInMonth := firstOfMonth.AddDate(0, 1, -1).Day()
+		dayIndex := d.Day()
+		budgetCum := budgetMonthly * float64(dayIndex) / float64(daysInMonth)
+
+		// Reset cumulative at month start to reflect budget period
+		if dayIndex == 1 {
+			cum = 0
+		}
+		cum += spend
+
+		res = append(res, point{
+			Date:       key,
+			Spend:      spend,
+			Cumulative: cum,
+			BudgetCum:  budgetCum,
+			Saldo:      budgetCum - cum,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"from":          from.Format(layout),
+		"to":            to.Format(layout),
+		"monthlyBudget": budgetMonthly,
+		"points":        res,
+	})
 }
 
 func (s *Server) handleIndex(c *gin.Context) {

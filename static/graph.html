@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Expense Graph</title>
+  <link rel="stylesheet" href="/expenses/static/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.min.css" />
+  <style>
+    .container.wide { max-width: 1120px; }
+    .graph-card { background: var(--tg-theme-secondary-bg-color, #fff); border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.06); padding: 16px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .toolbar .row { display: flex; gap: 10px; align-items: center; }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; font-weight: 600; }
+    .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; vertical-align: middle; }
+    .legend .daily { color:#4e79a7 } .legend .cum { color:#f28e2b } .legend .budget { color:#76b7b2 } .legend .saldo{ color:#e15759 }
+    .legend .daily .dot { background:#4e79a7 } .legend .cum .dot { background:#f28e2b } .legend .budget .dot { background:#76b7b2 } .legend .saldo .dot { background:#e15759 }
+    .chart { width: 100%; height: 520px; }
+    @media (max-width: 520px) { .chart { height: 320px; } .container.wide { max-width: 520px; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell tg-app">
+    <header class="app-bar">
+      <div class="app-title">📈 Expense Graph</div>
+    </header>
+
+    <main class="container wide">
+      <div class="graph-card">
+        <div class="toolbar">
+          <div class="row">
+            <label>From <input type="date" id="from" /></label>
+            <label>To <input type="date" id="to" /></label>
+            <button id="apply" class="submit-btn" style="width:auto;padding:10px 14px;">Apply</button>
+            <button id="reset" class="upload-btn" style="width:auto;padding:10px 14px;">Reset Zoom</button>
+          </div>
+          <div class="row">
+            <label><input type="checkbox" id="toggle-daily" checked /> Daily</label>
+            <label><input type="checkbox" id="toggle-cum" checked /> Cumulative</label>
+            <label><input type="checkbox" id="toggle-budget" checked /> Budget</label>
+            <label><input type="checkbox" id="toggle-saldo" /> Saldo</label>
+          </div>
+          <div class="row">
+            <a href="/expenses/" class="upload-btn" style="width:auto;padding:10px 14px;">← Back</a>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span class="daily"><span class="dot"></span>Daily</span>
+          <span class="cum"><span class="dot"></span>Cumulative</span>
+          <span class="budget"><span class="dot"></span>Budget</span>
+          <span class="saldo"><span class="dot"></span>Saldo</span>
+        </div>
+
+        <div id="chart" class="chart"></div>
+      </div>
+    </main>
+    <footer class="safe-area"></footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.iife.min.js"></script>
+  <script src="/expenses/static/graph.js"></script>
+</body>
+</html>
+
+
