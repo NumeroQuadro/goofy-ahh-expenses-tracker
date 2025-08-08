@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-    "sort"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -162,38 +162,35 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 	// Monthly budget (runtime override if set, else from env)
 	monthlyBudget := b.getMonthlyBudget()
 
-	// Compute month boundaries and stats
-	lastOfMonth := time.Date(selectedDate.Year(), selectedDate.Month()+1, 0, 0, 0, 0, 0, b.location)
-	daysInMonth := lastOfMonth.Day()
-	dayOfMonth := selectedDate.Day()
+    // Compute pay-cycle boundaries (salary day)
+    cycleStart, nextCycleStart := b.getCycleStartAndNext(selectedDate)
+    daysInCycle := int(nextCycleStart.Sub(cycleStart).Hours()/24)
+    if daysInCycle <= 0 { daysInCycle = 1 }
+    dayIndex := int(selectedDate.Sub(cycleStart).Hours()/24) + 1
+    if dayIndex < 1 { dayIndex = 1 }
 
-	// Sum spent in month up to and including selected date
-	var monthSpentThroughToday float64
-	for _, tx := range b.data.GetAllTransactions() {
-		// parse tx date
-		d, err := time.ParseInLocation("2006-01-02", tx.Date, b.location)
-		if err != nil {
-			continue
-		}
-		if d.Year() == selectedDate.Year() && d.Month() == selectedDate.Month() && !d.After(selectedDate) {
-			monthSpentThroughToday += tx.Amount
-		}
-	}
+    // Sum spent in cycle up to and including selected date
+    var spentThroughToday float64
+    for _, tx := range b.data.GetAllTransactions() {
+        d, err := time.ParseInLocation("2006-01-02", tx.Date, b.location)
+        if err != nil { continue }
+        if (d.Equal(cycleStart) || d.After(cycleStart)) && (d.Equal(selectedDate) || d.Before(selectedDate)) {
+            spentThroughToday += tx.Amount
+        }
+    }
 
-	// Even monthly distribution: allowed cumulative spend through today
-	allowedCumulative := monthlyBudget * (float64(dayOfMonth) / float64(daysInMonth))
-	saldoToday := allowedCumulative - monthSpentThroughToday
+    // Even distribution across cycle
+    allowedCumulative := monthlyBudget * (float64(dayIndex) / float64(daysInCycle))
+    saldoToday := allowedCumulative - spentThroughToday
 
-	// Tomorrow's allowance (dynamic), if there are days left in the month
-	remainingDaysAfterToday := daysInMonth - dayOfMonth
-	var tomorrowAllowance float64
-	if remainingDaysAfterToday > 0 {
-		remainingBudgetAfterToday := monthlyBudget - monthSpentThroughToday
-		if remainingBudgetAfterToday < 0 {
-			remainingBudgetAfterToday = 0
-		}
-		tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
-	}
+    // Tomorrow's allowance (dynamic) within cycle
+    remainingDaysAfterToday := int(nextCycleStart.Sub(selectedDate).Hours()/24) - 1
+    var tomorrowAllowance float64
+    if remainingDaysAfterToday > 0 {
+        remainingBudgetAfterToday := monthlyBudget - spentThroughToday
+        if remainingBudgetAfterToday < 0 { remainingBudgetAfterToday = 0 }
+        tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
+    }
 
 	var report strings.Builder
 	report.WriteString(fmt.Sprintf("📊 %s\n", dateStr))
@@ -212,8 +209,8 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 	message := tgbotapi.NewMessage(msg.Chat.ID, report.String())
 	b.api.Send(message)
 
-    // Also send full CSV export with all expenses across all months, sorted by date desc
-    all := b.getAllTransactionsSortedDesc()
+	// Also send full CSV export with all expenses across all months, sorted by date desc
+	all := b.getAllTransactionsSortedDesc()
 	var sb strings.Builder
 	sb.WriteString("Date,Category,Description,Amount\n")
 	for _, tx := range all {
@@ -351,40 +348,38 @@ func (b *Bot) handleSaldo(msg *tgbotapi.Message) {
 	// Monthly budget (runtime override if set, else from env)
 	monthlyBudget := b.getMonthlyBudget()
 
-	// Month stats
-	lastOfMonth := time.Date(selectedDate.Year(), selectedDate.Month()+1, 0, 0, 0, 0, 0, b.location)
-	daysInMonth := lastOfMonth.Day()
-	dayOfMonth := selectedDate.Day()
+    // Cycle stats
+    cycleStart, nextCycleStart := b.getCycleStartAndNext(selectedDate)
+    daysInCycle := int(nextCycleStart.Sub(cycleStart).Hours()/24)
+    if daysInCycle <= 0 { daysInCycle = 1 }
+    dayIndex := int(selectedDate.Sub(cycleStart).Hours()/24) + 1
+    if dayIndex < 1 { dayIndex = 1 }
 
-	var monthSpentThroughToday float64
-	for _, tx := range b.data.GetAllTransactions() {
-		d, err := time.ParseInLocation("2006-01-02", tx.Date, b.location)
-		if err != nil {
-			continue
-		}
-		if d.Year() == selectedDate.Year() && d.Month() == selectedDate.Month() && !d.After(selectedDate) {
-			monthSpentThroughToday += tx.Amount
-		}
-	}
+    var spentThroughToday float64
+    for _, tx := range b.data.GetAllTransactions() {
+        d, err := time.ParseInLocation("2006-01-02", tx.Date, b.location)
+        if err != nil { continue }
+        if (d.Equal(cycleStart) || d.After(cycleStart)) && (d.Equal(selectedDate) || d.Before(selectedDate)) {
+            spentThroughToday += tx.Amount
+        }
+    }
 
-	allowedCumulative := monthlyBudget * (float64(dayOfMonth) / float64(daysInMonth))
-	saldoToday := allowedCumulative - monthSpentThroughToday
+    allowedCumulative := monthlyBudget * (float64(dayIndex) / float64(daysInCycle))
+    saldoToday := allowedCumulative - spentThroughToday
 
-	remainingDaysAfterToday := daysInMonth - dayOfMonth
-	var tomorrowAllowance float64
-	if remainingDaysAfterToday > 0 {
-		remainingBudgetAfterToday := monthlyBudget - monthSpentThroughToday
-		if remainingBudgetAfterToday < 0 {
-			remainingBudgetAfterToday = 0
-		}
-		tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
-	}
+    remainingDaysAfterToday := int(nextCycleStart.Sub(selectedDate).Hours()/24) - 1
+    var tomorrowAllowance float64
+    if remainingDaysAfterToday > 0 {
+        remainingBudgetAfterToday := monthlyBudget - spentThroughToday
+        if remainingBudgetAfterToday < 0 { remainingBudgetAfterToday = 0 }
+        tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
+    }
 
 	// Compose concise response
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("📅 %s\n", dateStr))
 	sb.WriteString(fmt.Sprintf("💳 Spent today: %.2f RUB\n", todayTotal))
-	sb.WriteString(fmt.Sprintf("🎯 Allowed so far: %.2f RUB\n", allowedCumulative))
+    sb.WriteString(fmt.Sprintf("🎯 Allowed so far (cycle): %.2f RUB\n", allowedCumulative))
 	sb.WriteString(fmt.Sprintf("💸 Saldo today: %.2f RUB\n", saldoToday))
 	if remainingDaysAfterToday > 0 {
 		sb.WriteString(fmt.Sprintf("➡️ Tomorrow allowance: %.2f RUB", tomorrowAllowance))
@@ -393,8 +388,8 @@ func (b *Bot) handleSaldo(msg *tgbotapi.Message) {
 	b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, sb.String()))
 }
 func (b *Bot) handleExport(msg *tgbotapi.Message) {
-    // stream current CSV data back to the user, sorted by date desc
-    all := b.getAllTransactionsSortedDesc()
+	// stream current CSV data back to the user, sorted by date desc
+	all := b.getAllTransactionsSortedDesc()
 	var sb strings.Builder
 	sb.WriteString("Date,Category,Description,Amount\n")
 	for _, tx := range all {
@@ -407,17 +402,42 @@ func (b *Bot) handleExport(msg *tgbotapi.Message) {
 
 // getAllTransactionsSortedDesc returns all transactions sorted by date descending (newest first)
 func (b *Bot) getAllTransactionsSortedDesc() []data.Transaction {
-    all := b.data.GetAllTransactions()
-    sort.Slice(all, func(i, j int) bool {
-        // parse to time for robust sort; fallback to string compare on error
-        ti, errI := time.Parse("2006-01-02", all[i].Date)
-        tj, errJ := time.Parse("2006-01-02", all[j].Date)
-        if errI == nil && errJ == nil {
-            return ti.After(tj)
+	all := b.data.GetAllTransactions()
+	sort.Slice(all, func(i, j int) bool {
+		// parse to time for robust sort; fallback to string compare on error
+		ti, errI := time.Parse("2006-01-02", all[i].Date)
+		tj, errJ := time.Parse("2006-01-02", all[j].Date)
+		if errI == nil && errJ == nil {
+			return ti.After(tj)
+		}
+		return all[i].Date > all[j].Date
+	})
+	return all
+}
+
+// getCycleStartAndNext returns the start of the current salary cycle and the next cycle start.
+// Cycle starts on SALARY_DAY (1..28, default 15). Example: if SALARY_DAY=15 and selectedDate=2025-08-09,
+// cycleStart=2025-07-15, nextCycleStart=2025-08-15.
+func (b *Bot) getCycleStartAndNext(selectedDate time.Time) (time.Time, time.Time) {
+    salaryDay := 15
+    if s := os.Getenv("SALARY_DAY"); s != "" {
+        if v, err := strconv.Atoi(s); err == nil && v >= 1 && v <= 28 {
+            salaryDay = v
         }
-        return all[i].Date > all[j].Date
-    })
-    return all
+    }
+
+    year, month, day := selectedDate.Date()
+    // Determine current cycle start
+    var cycleStart time.Time
+    if day >= salaryDay {
+        cycleStart = time.Date(year, month, salaryDay, 0, 0, 0, 0, b.location)
+    } else {
+        prev := selectedDate.AddDate(0, -1, 0)
+        cycleStart = time.Date(prev.Year(), prev.Month(), salaryDay, 0, 0, 0, 0, b.location)
+    }
+    // Next cycle start is salaryDay of next month from cycleStart
+    next := cycleStart.AddDate(0, 1, 0)
+    return cycleStart, next
 }
 
 // getMonthlyBudget returns runtime override if present, otherwise the .env value (default 12000)
