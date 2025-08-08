@@ -9,27 +9,31 @@ body {
     background: var(--tg-theme-bg-color, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
     min-height: 100vh;
     color: var(--tg-theme-text-color, #333);
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+
+.app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+.app-bar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--tg-theme-header-bg-color, #ffffffaa);
+    backdrop-filter: blur(8px);
+    padding: env(safe-area-inset-top) 16px 12px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.app-title { font-weight: 700; font-size: 18px; color: var(--tg-theme-text-color, #2c3e50); }
 
 .container {
     width: 100%;
-    max-width: 560px;
+    max-width: 480px;
     margin: 0 auto;
     padding: 16px;
-    background: var(--tg-theme-secondary-bg-color, #ffffff);
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    margin-top: 12px;
-    margin-bottom: 12px;
 }
 
-h1 {
-    text-align: center;
-    color: var(--tg-theme-text-color, #2c3e50);
-    margin-bottom: 16px;
-    font-size: 1.8rem;
-    font-weight: 700;
+/* Card-like sections for mobile */
+.calendar-section, form, .upload-section {
+    background: var(--tg-theme-secondary-bg-color, #fff);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    padding: 16px;
 }
 
 h3 {
@@ -39,12 +43,7 @@ h3 {
 }
 
 /* Calendar Styles */
-.calendar-section {
-    margin-bottom: 16px;
-    background: var(--tg-theme-section-bg-color, #f8f9fa);
-    border-radius: 12px;
-    padding: 12px;
-}
+.calendar-section { margin-bottom: 16px; }
 
 .calendar-header {
     display: flex;
@@ -54,12 +53,12 @@ h3 {
 }
 
 .calendar-btn {
-    background: var(--tg-theme-button-color, #667eea);
-    color: var(--tg-theme-button-text-color, #fff);
+    background: #667eea;
+    color: white;
     border: none;
-    border-radius: 10px;
-    width: 44px;
-    height: 44px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
     font-size: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -71,16 +70,12 @@ h3 {
 }
 
 #current-month {
-    font-size: 1.2rem;
-    color: var(--tg-theme-hint-color, #2c3e50);
+    font-size: 1.5em;
+    color: #2c3e50;
     font-weight: 600;
 }
 
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-}
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 
 .calendar-day {
     aspect-ratio: 1;
@@ -93,15 +88,18 @@ h3 {
     font-weight: 500;
 }
 
-.calendar-day:hover { background: rgba(102,126,234,0.15); }
+.calendar-day:hover { background: #667eea; color: white; }
 
-.calendar-day.selected { background: #667eea; color: #fff; }
+.calendar-day.selected {
+    background: #667eea;
+    color: white;
+}
 
 .calendar-day.other-month {
     color: #ccc;
 }
 
-.calendar-day.today { background: #e74c3c; color: #fff; }
+.calendar-day.today { background: #e74c3c; color: white; }
 
 /* Form Styles */
 .form-group {
@@ -112,13 +110,13 @@ label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
-    color: var(--tg-theme-hint-color, #2c3e50);
+    color: #2c3e50;
 }
 
 input, select {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid #e1e8ed;
+    border: 2px solid var(--tg-theme-hint-color, #e1e8ed);
     border-radius: 10px;
     font-size: 16px;
     transition: all 0.3s ease;
@@ -157,22 +155,17 @@ input:focus, select:focus {
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 520px) {
     .container {
-        margin: 8px;
         padding: 12px;
     }
     
-    h1 {
-        font-size: 1.6rem;
-    }
-    
     .calendar-grid {
-        gap: 4px;
+        gap: 3px;
     }
     
     .calendar-day {
-        font-size: 13px;
+        font-size: 14px;
     }
 }
 
@@ -203,12 +196,7 @@ input:focus, select:focus {
 }
 
 /* Telegram Web App Integration */
-.tg-app {
-    background: var(--tg-theme-bg-color, white);
-    color: var(--tg-theme-text-color, #333);
-}
+.tg-app { background: var(--tg-theme-bg-color, white); color: var(--tg-theme-text-color, #333); }
+.tg-app .submit-btn { background: var(--tg-theme-button-color, #667eea); color: var(--tg-theme-button-text-color, white); }
 
-.tg-app .submit-btn {
-    background: var(--tg-theme-button-color, #667eea);
-    color: var(--tg-theme-button-text-color, white);
-}
+.safe-area { height: env(safe-area-inset-bottom); }

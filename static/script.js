@@ -4,6 +4,10 @@ const tg = window.Telegram.WebApp;
 if (tg) {
     tg.ready();
     document.body.classList.add('tg-app');
+    // Expand to full screen in Telegram if available
+    if (tg.expand) {
+        try { tg.expand(); } catch (_) {}
+    }
 }
 
 // Calendar functionality
