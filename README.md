@@ -29,8 +29,8 @@ nano .env
 # Build the Docker image
 make docker-build
 
-# Run with SSL certificates (production)
-make docker-run
+# Run with SSL certificates (production) and host‑persisted CSV
+make docker-run  # binds ./data -> /app/data so CSV survives restarts
 
 # View logs
 make docker-logs
@@ -59,8 +59,9 @@ make build
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `TELEGRAM_BOT_TOKEN` | Your Telegram bot token | Required |
-| `WEB_ADDRESS` | Web server address | `0.0.0.0:8080` |
+| `WEB_ADDRESS` | Web server address | `0.0.0.0:8088` |
 | `DATA_PATH` | Path to CSV data file | `/app/data/data.csv` |
+| `MONTHLY_BUDGET_RUB` | Monthly budget for saldo math | `12000` |
 | `DAILY_REPORT_TIME` | Time for daily reports | `19:00` |
 | `DAILY_REPORT_TIMEZONE` | Timezone for reports | `Europe/Moscow` |
 

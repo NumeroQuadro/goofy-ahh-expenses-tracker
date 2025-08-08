@@ -124,8 +124,10 @@ func (s *Server) handleTransaction(c *gin.Context) {
 func (s *Server) handleCSVUpload(c *gin.Context) {
 	file, err := c.FormFile("csv")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No CSV file provided"})
-		return
+        // Allow empty upload to reset data
+        s.data.Clear()
+        c.JSON(http.StatusOK, gin.H{"message": "Data reset (empty upload)"})
+        return
 	}
 
 	// Open the uploaded file
@@ -144,10 +146,12 @@ func (s *Server) handleCSVUpload(c *gin.Context) {
 		return
 	}
 
-	if len(records) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "CSV file is empty"})
-		return
-	}
+    if len(records) == 0 {
+        // Empty file → clear data
+        s.data.Clear()
+        c.JSON(http.StatusOK, gin.H{"message": "Data reset (empty CSV)"})
+        return
+    }
 
 	// Validate header
 	expectedHeader := []string{"Date", "Category", "Description", "Amount"}
@@ -196,13 +200,11 @@ func (s *Server) handleCSVUpload(c *gin.Context) {
 		return
 	}
 
-	// Add all valid transactions
-	for _, tx := range transactions {
-		if err := s.data.AddTransaction(tx); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save transactions"})
-			return
-		}
-	}
+    // Replace existing data with uploaded set atomically
+    if err := s.data.ReplaceAll(transactions); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save transactions"})
+        return
+    }
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": fmt.Sprintf("Successfully imported %d transactions", len(transactions)),

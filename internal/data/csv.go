@@ -126,6 +126,23 @@ func (d *Data) save() error {
 	return nil
 }
 
+// ReplaceAll atomically replaces all stored transactions and persists them to disk.
+func (d *Data) ReplaceAll(transactions []Transaction) error {
+    d.mu.Lock()
+    d.Transactions = make([]Transaction, len(transactions))
+    copy(d.Transactions, transactions)
+    d.mu.Unlock()
+    return d.save()
+}
+
+// Clear removes all transactions and leaves only the CSV header in the file.
+func (d *Data) Clear() error {
+    d.mu.Lock()
+    d.Transactions = []Transaction{}
+    d.mu.Unlock()
+    return d.save()
+}
+
 func (d *Data) GetTransactionsByDate(date string) []Transaction {
 	d.mu.Lock()
 	defer d.mu.Unlock()
