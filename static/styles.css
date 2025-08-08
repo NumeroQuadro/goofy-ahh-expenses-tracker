@@ -6,27 +6,29 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--tg-theme-bg-color, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
     min-height: 100vh;
-    color: #333;
+    color: var(--tg-theme-text-color, #333);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .container {
-    max-width: 600px;
+    width: 100%;
+    max-width: 560px;
     margin: 0 auto;
-    padding: 20px;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    margin-top: 20px;
-    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--tg-theme-secondary-bg-color, #ffffff);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    margin-top: 12px;
+    margin-bottom: 12px;
 }
 
 h1 {
     text-align: center;
-    color: #2c3e50;
-    margin-bottom: 30px;
-    font-size: 2.5em;
+    color: var(--tg-theme-text-color, #2c3e50);
+    margin-bottom: 16px;
+    font-size: 1.8rem;
     font-weight: 700;
 }
 
@@ -38,10 +40,10 @@ h3 {
 
 /* Calendar Styles */
 .calendar-section {
-    margin-bottom: 30px;
-    background: #f8f9fa;
-    border-radius: 15px;
-    padding: 20px;
+    margin-bottom: 16px;
+    background: var(--tg-theme-section-bg-color, #f8f9fa);
+    border-radius: 12px;
+    padding: 12px;
 }
 
 .calendar-header {
@@ -52,12 +54,12 @@ h3 {
 }
 
 .calendar-btn {
-    background: #667eea;
-    color: white;
+    background: var(--tg-theme-button-color, #667eea);
+    color: var(--tg-theme-button-text-color, #fff);
     border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
     font-size: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -69,8 +71,8 @@ h3 {
 }
 
 #current-month {
-    font-size: 1.5em;
-    color: #2c3e50;
+    font-size: 1.2rem;
+    color: var(--tg-theme-hint-color, #2c3e50);
     font-weight: 600;
 }
 
@@ -91,24 +93,15 @@ h3 {
     font-weight: 500;
 }
 
-.calendar-day:hover {
-    background: #667eea;
-    color: white;
-}
+.calendar-day:hover { background: rgba(102,126,234,0.15); }
 
-.calendar-day.selected {
-    background: #667eea;
-    color: white;
-}
+.calendar-day.selected { background: #667eea; color: #fff; }
 
 .calendar-day.other-month {
     color: #ccc;
 }
 
-.calendar-day.today {
-    background: #e74c3c;
-    color: white;
-}
+.calendar-day.today { background: #e74c3c; color: #fff; }
 
 /* Form Styles */
 .form-group {
@@ -119,7 +112,7 @@ label {
     display: block;
     margin-bottom: 8px;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--tg-theme-hint-color, #2c3e50);
 }
 
 input, select {
@@ -129,7 +122,7 @@ input, select {
     border-radius: 10px;
     font-size: 16px;
     transition: all 0.3s ease;
-    background: white;
+    background: var(--tg-theme-bg-color, #fff);
 }
 
 input:focus, select:focus {
@@ -141,8 +134,8 @@ input:focus, select:focus {
 .submit-btn, .upload-btn {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: var(--tg-theme-button-color, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+    color: var(--tg-theme-button-text-color, #fff);
     border: none;
     border-radius: 10px;
     font-size: 16px;
@@ -166,20 +159,20 @@ input:focus, select:focus {
 /* Responsive Design */
 @media (max-width: 768px) {
     .container {
-        margin: 10px;
-        padding: 15px;
+        margin: 8px;
+        padding: 12px;
     }
     
     h1 {
-        font-size: 2em;
+        font-size: 1.6rem;
     }
     
     .calendar-grid {
-        gap: 3px;
+        gap: 4px;
     }
     
     .calendar-day {
-        font-size: 14px;
+        font-size: 13px;
     }
 }
 
