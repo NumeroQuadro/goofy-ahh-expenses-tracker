@@ -152,6 +152,14 @@ All data is stored in CSV format, making it easy to:
 - Import into other applications
 - Migrate to different systems
 
+### Automatic Daily Backups
+- The app creates daily backups of your CSV to `/app/data/backups/YYYY-MM-DD.csv` and updates `/app/data/backups/latest.csv`.
+- Configure via env:
+  - `BACKUP_TIME` (e.g. `03:00`)
+  - `BACKUP_TIMEZONE` (e.g. `Europe/Moscow`)
+  - `BACKUP_RETENTION_DAYS` (e.g. `30`)
+- With `make docker-run`, backups are persisted on the host under `/var/lib/goofy-expenses-data/backups/`.
+
 ## License
 
 This project is open source and available under the MIT License. 

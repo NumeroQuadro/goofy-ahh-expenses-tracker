@@ -1,14 +1,18 @@
 package main
 
 import (
+    "context"
     "log"
     "os"
+    "os/signal"
     "path/filepath"
+    "syscall"
 
     tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
     "github.com/NumeroQuadro/goofy-ahh-expenses-tracker/config"
     "github.com/NumeroQuadro/goofy-ahh-expenses-tracker/internal/bot"
     "github.com/NumeroQuadro/goofy-ahh-expenses-tracker/internal/data"
+    "github.com/NumeroQuadro/goofy-ahh-expenses-tracker/internal/backup"
     "github.com/NumeroQuadro/goofy-ahh-expenses-tracker/internal/web"
 )
 
@@ -39,9 +43,17 @@ func main() {
 
 	log.Printf("Authorized on account %s", api.Self.UserName)
 
-	b := bot.New(api, db)
-	go b.Start()
+    b := bot.New(api, db)
+    go b.Start()
 
-	server := web.New(db, b)
-	log.Fatal(server.Start(cfg.WebAddress, cfg.CertPath, cfg.KeyPath))
+    // Start daily backup scheduler
+    ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+    defer stop()
+    backupDir := filepath.Join(filepath.Dir(dataPath), "backups")
+    go backup.RunDaily(ctx, dataPath, backupDir, cfg.BackupTime, cfg.BackupTimezone, cfg.BackupRetention, nil)
+
+    server := web.New(db, b)
+    if err := server.Start(cfg.WebAddress, cfg.CertPath, cfg.KeyPath); err != nil {
+        log.Fatal(err)
+    }
 }
