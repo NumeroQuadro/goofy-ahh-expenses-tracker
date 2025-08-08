@@ -70,8 +70,8 @@ func (b *Bot) Start() {
 			b.handleStart(update.Message)
 		case "report":
 			b.handleDailyReport(update.Message)
-        case "saldo":
-            b.handleSaldo(update.Message)
+		case "saldo":
+			b.handleSaldo(update.Message)
 		case "csv":
 			b.handleCSVUpload(update.Message)
 		case "export":
@@ -256,79 +256,79 @@ For support, contact the bot administrator.`
 }
 
 func (b *Bot) handleSaldo(msg *tgbotapi.Message) {
-    // Optional date arg
-    parts := strings.Fields(msg.Text)
-    var dateStr string
-    if len(parts) > 1 {
-        if _, err := time.Parse("2006-01-02", parts[1]); err == nil {
-            dateStr = parts[1]
-        }
-    }
-    if dateStr == "" {
-        dateStr = time.Now().In(b.location).Format("2006-01-02")
-    }
+	// Optional date arg
+	parts := strings.Fields(msg.Text)
+	var dateStr string
+	if len(parts) > 1 {
+		if _, err := time.Parse("2006-01-02", parts[1]); err == nil {
+			dateStr = parts[1]
+		}
+	}
+	if dateStr == "" {
+		dateStr = time.Now().In(b.location).Format("2006-01-02")
+	}
 
-    selectedDate, err := time.ParseInLocation("2006-01-02", dateStr, b.location)
-    if err != nil {
-        selectedDate = time.Now().In(b.location)
-        dateStr = selectedDate.Format("2006-01-02")
-    }
+	selectedDate, err := time.ParseInLocation("2006-01-02", dateStr, b.location)
+	if err != nil {
+		selectedDate = time.Now().In(b.location)
+		dateStr = selectedDate.Format("2006-01-02")
+	}
 
-    // Today's total
-    todayTx := b.data.GetTransactionsByDate(dateStr)
-    var todayTotal float64
-    for _, tx := range todayTx {
-        todayTotal += tx.Amount
-    }
+	// Today's total
+	todayTx := b.data.GetTransactionsByDate(dateStr)
+	var todayTotal float64
+	for _, tx := range todayTx {
+		todayTotal += tx.Amount
+	}
 
-    // Monthly budget
-    monthlyBudget := 12000.0
-    if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
-        if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
-            monthlyBudget = v
-        }
-    }
+	// Monthly budget
+	monthlyBudget := 12000.0
+	if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
+		if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
+			monthlyBudget = v
+		}
+	}
 
-    // Month stats
-    lastOfMonth := time.Date(selectedDate.Year(), selectedDate.Month()+1, 0, 0, 0, 0, 0, b.location)
-    daysInMonth := lastOfMonth.Day()
-    dayOfMonth := selectedDate.Day()
+	// Month stats
+	lastOfMonth := time.Date(selectedDate.Year(), selectedDate.Month()+1, 0, 0, 0, 0, 0, b.location)
+	daysInMonth := lastOfMonth.Day()
+	dayOfMonth := selectedDate.Day()
 
-    var monthSpentThroughToday float64
-    for _, tx := range b.data.GetAllTransactions() {
-        d, err := time.ParseInLocation("2006-01-02", tx.Date, b.location)
-        if err != nil {
-            continue
-        }
-        if d.Year() == selectedDate.Year() && d.Month() == selectedDate.Month() && !d.After(selectedDate) {
-            monthSpentThroughToday += tx.Amount
-        }
-    }
+	var monthSpentThroughToday float64
+	for _, tx := range b.data.GetAllTransactions() {
+		d, err := time.ParseInLocation("2006-01-02", tx.Date, b.location)
+		if err != nil {
+			continue
+		}
+		if d.Year() == selectedDate.Year() && d.Month() == selectedDate.Month() && !d.After(selectedDate) {
+			monthSpentThroughToday += tx.Amount
+		}
+	}
 
-    allowedCumulative := monthlyBudget * (float64(dayOfMonth) / float64(daysInMonth))
-    saldoToday := allowedCumulative - monthSpentThroughToday
+	allowedCumulative := monthlyBudget * (float64(dayOfMonth) / float64(daysInMonth))
+	saldoToday := allowedCumulative - monthSpentThroughToday
 
-    remainingDaysAfterToday := daysInMonth - dayOfMonth
-    var tomorrowAllowance float64
-    if remainingDaysAfterToday > 0 {
-        remainingBudgetAfterToday := monthlyBudget - monthSpentThroughToday
-        if remainingBudgetAfterToday < 0 {
-            remainingBudgetAfterToday = 0
-        }
-        tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
-    }
+	remainingDaysAfterToday := daysInMonth - dayOfMonth
+	var tomorrowAllowance float64
+	if remainingDaysAfterToday > 0 {
+		remainingBudgetAfterToday := monthlyBudget - monthSpentThroughToday
+		if remainingBudgetAfterToday < 0 {
+			remainingBudgetAfterToday = 0
+		}
+		tomorrowAllowance = remainingBudgetAfterToday / float64(remainingDaysAfterToday)
+	}
 
-    // Compose concise response
-    var sb strings.Builder
-    sb.WriteString(fmt.Sprintf("📅 %s\n", dateStr))
-    sb.WriteString(fmt.Sprintf("💳 Spent today: %.2f RUB\n", todayTotal))
-    sb.WriteString(fmt.Sprintf("🎯 Allowed so far: %.2f RUB\n", allowedCumulative))
-    sb.WriteString(fmt.Sprintf("💸 Saldo today: %.2f RUB\n", saldoToday))
-    if remainingDaysAfterToday > 0 {
-        sb.WriteString(fmt.Sprintf("➡️ Tomorrow allowance: %.2f RUB", tomorrowAllowance))
-    }
+	// Compose concise response
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("📅 %s\n", dateStr))
+	sb.WriteString(fmt.Sprintf("💳 Spent today: %.2f RUB\n", todayTotal))
+	sb.WriteString(fmt.Sprintf("🎯 Allowed so far: %.2f RUB\n", allowedCumulative))
+	sb.WriteString(fmt.Sprintf("💸 Saldo today: %.2f RUB\n", saldoToday))
+	if remainingDaysAfterToday > 0 {
+		sb.WriteString(fmt.Sprintf("➡️ Tomorrow allowance: %.2f RUB", tomorrowAllowance))
+	}
 
-    b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, sb.String()))
+	b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, sb.String()))
 }
 func (b *Bot) handleExport(msg *tgbotapi.Message) {
 	// stream current CSV data back to the user
