@@ -172,17 +172,21 @@ document.getElementById('csv-form').addEventListener('submit', function(e) {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(result => {
-        if (result.error) {
-            showMessage(result.error, 'error');
-            if (result.errors) {
-                result.errors.forEach(error => {
-                    showMessage(error, 'error');
-                });
+    .then(async response => {
+        const isJSON = response.headers.get('content-type')?.includes('application/json');
+        const payload = isJSON ? await response.json() : { message: await response.text() };
+        return { ok: response.ok, payload };
+    })
+    .then(({ ok, payload }) => {
+        if (!ok || payload.error) {
+            const msg = payload.error || payload.message || 'Upload failed';
+            showMessage(`❌ ${msg}`, 'error');
+            if (payload.errors) {
+                payload.errors.forEach(err => showMessage(err, 'error'));
             }
         } else {
-            showMessage(`✅ ${result.message}`, 'success');
+            const msg = payload.message || 'Uploaded successfully';
+            showMessage(`✅ ${msg}`, 'success');
             this.reset();
         }
     })
@@ -209,6 +213,16 @@ function showMessage(message, type) {
     // Insert at the top of the container
     const container = document.querySelector('.container');
     container.insertBefore(messageElement, container.firstChild);
+    
+    // Also show toast overlay for better visibility on mobile
+    const toasts = document.getElementById('toasts');
+    if (toasts) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        toasts.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
     
     // Auto-remove after 5 seconds
     setTimeout(() => {
