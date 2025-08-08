@@ -19,9 +19,9 @@ type Bot struct {
 	api      *tgbotapi.BotAPI
 	data     *data.Data
 	location *time.Location
-    // Runtime-only monthly budget override. If not set, values are taken from .env
-    monthlyBudgetOverride      float64
-    hasMonthlyBudgetOverride   bool
+	// Runtime-only monthly budget override. If not set, values are taken from .env
+	monthlyBudgetOverride    float64
+	hasMonthlyBudgetOverride bool
 }
 
 type TransactionData struct {
@@ -75,8 +75,8 @@ func (b *Bot) Start() {
 			b.handleDailyReport(update.Message)
 		case "saldo":
 			b.handleSaldo(update.Message)
-        case "budget":
-            b.handleBudget(update.Message)
+		case "budget":
+			b.handleBudget(update.Message)
 		case "csv":
 			b.handleCSVUpload(update.Message)
 		case "export":
@@ -95,15 +95,15 @@ func (b *Bot) Start() {
 }
 
 func (b *Bot) handleStart(msg *tgbotapi.Message) {
-    // Read monthly budget (runtime override if set, otherwise from environment)
-    monthlyBudget := b.getMonthlyBudget()
+	// Read monthly budget (runtime override if set, otherwise from environment)
+	monthlyBudget := b.getMonthlyBudget()
 	// Compute current month's daily allowance based on timezone
 	now := time.Now().In(b.location)
 	lastOfMonth := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, b.location)
 	daysInMonth := lastOfMonth.Day()
 	dailyAllowance := monthlyBudget / float64(daysInMonth)
 
-    text := fmt.Sprintf(`Welcome to the Goofy Ahh Expenses Tracker! 🎉
+	text := fmt.Sprintf(`Welcome to the Goofy Ahh Expenses Tracker! 🎉
 
 Budget settings:
 • Monthly budget: %.2f RUB
@@ -158,8 +158,8 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 		todayTotal += tx.Amount
 	}
 
-    // Monthly budget (runtime override if set, else from env)
-    monthlyBudget := b.getMonthlyBudget()
+	// Monthly budget (runtime override if set, else from env)
+	monthlyBudget := b.getMonthlyBudget()
 
 	// Compute month boundaries and stats
 	lastOfMonth := time.Date(selectedDate.Year(), selectedDate.Month()+1, 0, 0, 0, 0, 0, b.location)
@@ -226,49 +226,50 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 
 // handleBudget allows runtime override of monthly budget without changing .env
 // Usage:
-//   /budget            -> show current budget and source
-//   /budget 15000      -> set runtime override
-//   /budget reset      -> clear override (revert to .env)
+//
+//	/budget            -> show current budget and source
+//	/budget 15000      -> set runtime override
+//	/budget reset      -> clear override (revert to .env)
 func (b *Bot) handleBudget(msg *tgbotapi.Message) {
-    parts := strings.Fields(msg.Text)
+	parts := strings.Fields(msg.Text)
 
-    // Show current
-    if len(parts) == 1 || (len(parts) == 2 && parts[1] == "show") {
-        source := "env (.env)"
-        val := b.getMonthlyBudget()
-        if b.hasMonthlyBudgetOverride {
-            source = "runtime override (resets on restart)"
-        }
-        reply := fmt.Sprintf("Current monthly budget: %.2f RUB\nSource: %s\n\nTo change: /budget <amount> (e.g., /budget 15000)\nTo reset to .env: /budget reset", val, source)
-        b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, reply))
-        return
-    }
+	// Show current
+	if len(parts) == 1 || (len(parts) == 2 && parts[1] == "show") {
+		source := "env (.env)"
+		val := b.getMonthlyBudget()
+		if b.hasMonthlyBudgetOverride {
+			source = "runtime override (resets on restart)"
+		}
+		reply := fmt.Sprintf("Current monthly budget: %.2f RUB\nSource: %s\n\nTo change: /budget <amount> (e.g., /budget 15000)\nTo reset to .env: /budget reset", val, source)
+		b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, reply))
+		return
+	}
 
-    // Reset
-    if len(parts) == 2 && strings.EqualFold(parts[1], "reset") {
-        b.hasMonthlyBudgetOverride = false
-        b.monthlyBudgetOverride = 0
-        reply := fmt.Sprintf("✅ Reset. Using .env MONTHLY_BUDGET_RUB = %.2f RUB", b.getMonthlyBudget())
-        b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, reply))
-        return
-    }
+	// Reset
+	if len(parts) == 2 && strings.EqualFold(parts[1], "reset") {
+		b.hasMonthlyBudgetOverride = false
+		b.monthlyBudgetOverride = 0
+		reply := fmt.Sprintf("✅ Reset. Using .env MONTHLY_BUDGET_RUB = %.2f RUB", b.getMonthlyBudget())
+		b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, reply))
+		return
+	}
 
-    // Set amount
-    if len(parts) == 2 {
-        // support comma as decimal separator
-        s := strings.ReplaceAll(parts[1], ",", ".")
-        val, err := strconv.ParseFloat(s, 64)
-        if err != nil || val <= 0 {
-            b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, "❌ Invalid amount. Use: /budget 15000"))
-            return
-        }
-        b.monthlyBudgetOverride = val
-        b.hasMonthlyBudgetOverride = true
-        b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, fmt.Sprintf("✅ Monthly budget set to %.2f RUB (runtime override)", val)))
-        return
-    }
+	// Set amount
+	if len(parts) == 2 {
+		// support comma as decimal separator
+		s := strings.ReplaceAll(parts[1], ",", ".")
+		val, err := strconv.ParseFloat(s, 64)
+		if err != nil || val <= 0 {
+			b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, "❌ Invalid amount. Use: /budget 15000"))
+			return
+		}
+		b.monthlyBudgetOverride = val
+		b.hasMonthlyBudgetOverride = true
+		b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, fmt.Sprintf("✅ Monthly budget set to %.2f RUB (runtime override)", val)))
+		return
+	}
 
-    b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, "Usage: /budget | /budget <amount> | /budget reset"))
+	b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, "Usage: /budget | /budget <amount> | /budget reset"))
 }
 
 func (b *Bot) handleCSVUpload(msg *tgbotapi.Message) {
@@ -346,8 +347,8 @@ func (b *Bot) handleSaldo(msg *tgbotapi.Message) {
 		todayTotal += tx.Amount
 	}
 
-    // Monthly budget (runtime override if set, else from env)
-    monthlyBudget := b.getMonthlyBudget()
+	// Monthly budget (runtime override if set, else from env)
+	monthlyBudget := b.getMonthlyBudget()
 
 	// Month stats
 	lastOfMonth := time.Date(selectedDate.Year(), selectedDate.Month()+1, 0, 0, 0, 0, 0, b.location)
@@ -405,16 +406,16 @@ func (b *Bot) handleExport(msg *tgbotapi.Message) {
 
 // getMonthlyBudget returns runtime override if present, otherwise the .env value (default 12000)
 func (b *Bot) getMonthlyBudget() float64 {
-    if b.hasMonthlyBudgetOverride && b.monthlyBudgetOverride > 0 {
-        return b.monthlyBudgetOverride
-    }
-    monthlyBudget := 12000.0
-    if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
-        if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
-            monthlyBudget = v
-        }
-    }
-    return monthlyBudget
+	if b.hasMonthlyBudgetOverride && b.monthlyBudgetOverride > 0 {
+		return b.monthlyBudgetOverride
+	}
+	monthlyBudget := 12000.0
+	if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
+		if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
+			monthlyBudget = v
+		}
+	}
+	return monthlyBudget
 }
 
 func (b *Bot) handleUnknownCommand(msg *tgbotapi.Message) {
@@ -426,7 +427,7 @@ func (b *Bot) handleUnknownCommand(msg *tgbotapi.Message) {
 // HandleWebAppData processes data from the Telegram Mini App
 func (b *Bot) HandleWebAppData(chatID int64, payload string) error {
 	var txData TransactionData
-    if err := json.Unmarshal([]byte(payload), &txData); err != nil {
+	if err := json.Unmarshal([]byte(payload), &txData); err != nil {
 		return fmt.Errorf("failed to parse web app data: %w", err)
 	}
 
@@ -441,17 +442,17 @@ func (b *Bot) HandleWebAppData(chatID int64, payload string) error {
 		return fmt.Errorf("amount must be positive")
 	}
 
-    // Create transaction
-    tx := Transaction(txData)
+	// Create transaction
+	tx := Transaction(txData)
 
 	// Add to database using the data package's AddTransaction method
 	// We'll pass the fields directly to avoid type conversion issues
-    if err := b.data.AddTransaction(data.Transaction{
-        Date:        tx.Date,
-        Category:    tx.Category,
-        Description: tx.Description,
-        Amount:      tx.Amount,
-    }); err != nil {
+	if err := b.data.AddTransaction(data.Transaction{
+		Date:        tx.Date,
+		Category:    tx.Category,
+		Description: tx.Description,
+		Amount:      tx.Amount,
+	}); err != nil {
 		return fmt.Errorf("failed to save transaction: %w", err)
 	}
 
