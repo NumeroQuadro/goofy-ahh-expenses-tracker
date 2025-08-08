@@ -1,11 +1,11 @@
 package config
 
 import (
-    "log"
-    "os"
-    "strconv"
+	"log"
+	"os"
+	"strconv"
 
-    "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -14,9 +14,9 @@ type Config struct {
 	CertPath         string
 	KeyPath          string
 	DataPath         string
-    BackupTime       string // HH:MM local time
-    BackupTimezone   string // e.g., Europe/Moscow
-    BackupRetention  int    // days to keep backups
+	BackupTime       string // HH:MM local time
+	BackupTimezone   string // e.g., Europe/Moscow
+	BackupRetention  int    // days to keep backups
 }
 
 func Load() *Config {
@@ -31,9 +31,9 @@ func Load() *Config {
 		CertPath:         getEnv("CERT_PATH", ""),
 		KeyPath:          getEnv("KEY_PATH", ""),
 		DataPath:         getEnv("DATA_PATH", "/app/data/data.csv"),
-        BackupTime:       getEnv("BACKUP_TIME", "03:00"),
-        BackupTimezone:   getEnv("BACKUP_TIMEZONE", ""),
-        BackupRetention:  getEnvInt("BACKUP_RETENTION_DAYS", 30),
+		BackupTime:       getEnv("BACKUP_TIME", "03:00"),
+		BackupTimezone:   getEnv("BACKUP_TIMEZONE", ""),
+		BackupRetention:  getEnvInt("BACKUP_RETENTION_DAYS", 30),
 	}
 }
 
@@ -45,10 +45,10 @@ func getEnv(key, fallback string) string {
 }
 
 func getEnvInt(key string, fallback int) int {
-    if value, ok := os.LookupEnv(key); ok {
-        if n, err := strconv.Atoi(value); err == nil {
-            return n
-        }
-    }
-    return fallback
+	if value, ok := os.LookupEnv(key); ok {
+		if n, err := strconv.Atoi(value); err == nil {
+			return n
+		}
+	}
+	return fallback
 }
