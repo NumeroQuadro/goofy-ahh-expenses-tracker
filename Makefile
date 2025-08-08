@@ -9,10 +9,13 @@ docker-build:
 
 docker-run: docker-build
 	@if [ -f .env ]; then \
+		DATA_DIR=/var/lib/goofy-expenses-data; \
+		sudo mkdir -p $$DATA_DIR; \
+		sudo chown $$USER:$$USER $$DATA_DIR; \
 		docker run -d --rm --name $(APP_NAME) \
 		--env-file .env \
 		-p 8088:8088 \
-		-v $$(pwd)/data:/app/data \
+		-v $$DATA_DIR:/app/data \
 		$(DOCKER_IMAGE_NAME); \
 	else \
 		@echo "Error: .env file not found. Please create one from env.example."; \

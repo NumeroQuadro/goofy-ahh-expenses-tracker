@@ -90,20 +90,20 @@ func (b *Bot) Start() {
 }
 
 func (b *Bot) handleStart(msg *tgbotapi.Message) {
-    // Read monthly budget from environment
-    monthlyBudget := 12000.0
-    if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
-        if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
-            monthlyBudget = v
-        }
-    }
-    // Compute current month's daily allowance based on timezone
-    now := time.Now().In(b.location)
-    lastOfMonth := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, b.location)
-    daysInMonth := lastOfMonth.Day()
-    dailyAllowance := monthlyBudget / float64(daysInMonth)
+	// Read monthly budget from environment
+	monthlyBudget := 12000.0
+	if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
+		if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
+			monthlyBudget = v
+		}
+	}
+	// Compute current month's daily allowance based on timezone
+	now := time.Now().In(b.location)
+	lastOfMonth := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, b.location)
+	daysInMonth := lastOfMonth.Day()
+	dailyAllowance := monthlyBudget / float64(daysInMonth)
 
-    text := fmt.Sprintf(`Welcome to the Goofy Ahh Expenses Tracker! 🎉
+	text := fmt.Sprintf(`Welcome to the Goofy Ahh Expenses Tracker! 🎉
 
 Budget settings:
 • Monthly budget: %.2f RUB
