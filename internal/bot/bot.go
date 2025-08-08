@@ -90,7 +90,24 @@ func (b *Bot) Start() {
 }
 
 func (b *Bot) handleStart(msg *tgbotapi.Message) {
-    text := `Welcome to the Goofy Ahh Expenses Tracker! 🎉
+    // Read monthly budget from environment
+    monthlyBudget := 12000.0
+    if mbStr := os.Getenv("MONTHLY_BUDGET_RUB"); mbStr != "" {
+        if v, err := strconv.ParseFloat(mbStr, 64); err == nil && v > 0 {
+            monthlyBudget = v
+        }
+    }
+    // Compute current month's daily allowance based on timezone
+    now := time.Now().In(b.location)
+    lastOfMonth := time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, b.location)
+    daysInMonth := lastOfMonth.Day()
+    dailyAllowance := monthlyBudget / float64(daysInMonth)
+
+    text := fmt.Sprintf(`Welcome to the Goofy Ahh Expenses Tracker! 🎉
+
+Budget settings:
+• Monthly budget: %.2f RUB
+• Daily allowance this month (%s): %.2f RUB
 
 Available commands:
 /start  — Show this message
@@ -100,7 +117,7 @@ Available commands:
 /export — Download full CSV
 /help   — Help
 
-To add expenses, use the mini app by clicking the button below.`
+To add expenses, use the mini app by clicking the button below.`, monthlyBudget, now.Format("Jan 2006"), dailyAllowance)
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
