@@ -90,13 +90,15 @@ func (b *Bot) Start() {
 }
 
 func (b *Bot) handleStart(msg *tgbotapi.Message) {
-	text := `Welcome to the Goofy Ahh Expenses Tracker! 🎉
+    text := `Welcome to the Goofy Ahh Expenses Tracker! 🎉
 
 Available commands:
-/start - Show this message
-/report - Get today's spending report
-/csv - Upload your CSV file
-/help - Show help
+/start  — Show this message
+/report — Daily spending summary (use /report YYYY-MM-DD for a specific day)
+/saldo  — Today's saldo/allowance (also /saldo YYYY-MM-DD)
+/csv    — Upload your CSV file
+/export — Download full CSV
+/help   — Help
 
 To add expenses, use the mini app by clicking the button below.`
 
