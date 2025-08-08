@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+    "sort"
 	"strconv"
 	"strings"
 	"time"
@@ -211,8 +212,8 @@ func (b *Bot) handleDailyReport(msg *tgbotapi.Message) {
 	message := tgbotapi.NewMessage(msg.Chat.ID, report.String())
 	b.api.Send(message)
 
-	// Also send full CSV export with all expenses across all months
-	all := b.data.GetAllTransactions()
+    // Also send full CSV export with all expenses across all months, sorted by date desc
+    all := b.getAllTransactionsSortedDesc()
 	var sb strings.Builder
 	sb.WriteString("Date,Category,Description,Amount\n")
 	for _, tx := range all {
@@ -392,8 +393,8 @@ func (b *Bot) handleSaldo(msg *tgbotapi.Message) {
 	b.api.Send(tgbotapi.NewMessage(msg.Chat.ID, sb.String()))
 }
 func (b *Bot) handleExport(msg *tgbotapi.Message) {
-	// stream current CSV data back to the user
-	all := b.data.GetAllTransactions()
+    // stream current CSV data back to the user, sorted by date desc
+    all := b.getAllTransactionsSortedDesc()
 	var sb strings.Builder
 	sb.WriteString("Date,Category,Description,Amount\n")
 	for _, tx := range all {
@@ -402,6 +403,21 @@ func (b *Bot) handleExport(msg *tgbotapi.Message) {
 	doc := tgbotapi.FileBytes{Name: "expenses.csv", Bytes: []byte(sb.String())}
 	msgDoc := tgbotapi.NewDocument(msg.Chat.ID, doc)
 	b.api.Send(msgDoc)
+}
+
+// getAllTransactionsSortedDesc returns all transactions sorted by date descending (newest first)
+func (b *Bot) getAllTransactionsSortedDesc() []data.Transaction {
+    all := b.data.GetAllTransactions()
+    sort.Slice(all, func(i, j int) bool {
+        // parse to time for robust sort; fallback to string compare on error
+        ti, errI := time.Parse("2006-01-02", all[i].Date)
+        tj, errJ := time.Parse("2006-01-02", all[j].Date)
+        if errI == nil && errJ == nil {
+            return ti.After(tj)
+        }
+        return all[i].Date > all[j].Date
+    })
+    return all
 }
 
 // getMonthlyBudget returns runtime override if present, otherwise the .env value (default 12000)
